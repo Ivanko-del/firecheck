@@ -1,0 +1,24 @@
+name: Missed problem
+description: Rules that let the wrong people in, but firecheck stayed quiet.
+labels: ['missed problem']
+body:
+  - type: textarea
+    id: rules
+    attributes:
+      label: Rules
+      description: The smallest rules snippet that shows the problem. Remove anything private.
+      render: javascript
+    validations:
+      required: true
+  - type: textarea
+    id: attack
+    attributes:
+      label: What goes wrong
+      description: Who can read or write what they shouldn't, and with which request?
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: firecheck version
+      placeholder: npx firecheck --version

@@ -11,10 +11,18 @@
     "security",
     "static-analysis",
     "cli",
-    "github-action"
+    "github-action",
+    "firestore-rules",
+    "firebase-security",
+    "sast",
+    "devsecops"
   ],
   "license": "MIT",
   "author": "ivanko-del",
+  "homepage": "https://github.com/ivanko-del/firecheck#readme",
+  "bugs": {
+    "url": "https://github.com/ivanko-del/firecheck/issues"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/ivanko-del/firecheck.git"

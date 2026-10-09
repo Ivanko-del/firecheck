@@ -1,0 +1,31 @@
+name: False positive
+description: firecheck reported a problem in rules that are actually safe.
+labels: ['false positive']
+body:
+  - type: textarea
+    id: rules
+    attributes:
+      label: Rules
+      description: The smallest rules snippet that reproduces it. Remove anything private.
+      render: javascript
+    validations:
+      required: true
+  - type: textarea
+    id: output
+    attributes:
+      label: firecheck output
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why it is safe
+      description: Who is allowed access, and what makes the rule enforce that?
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: firecheck version
+      placeholder: npx firecheck --version

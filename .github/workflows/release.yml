@@ -1,0 +1,70 @@
+name: Release
+
+# Push a tag that matches package.json to publish, e.g.:
+#   npm version patch && git push --follow-tags
+#
+# One-time setup: publish the first version by hand (npm publish --access public),
+# then on npmjs.com add a trusted publisher for this repository and release.yml.
+on:
+  push:
+    tags: ['v*.*.*']
+
+permissions:
+  contents: write # GitHub release and the floating major tag (v0, v1, ...)
+  id-token: write # npm trusted publishing and provenance
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+          cache: npm
+      # Trusted publishing needs npm 11.5.1 or later.
+      - run: npm install -g npm@^11.5.1
+      - run: npm ci
+      - run: npm run check
+      - name: Check that dist/ is committed and up to date
+        run: git diff --exit-code -- dist
+      - name: Check that the tag matches package.json
+        run: |
+          version="$(node -p "require('./package.json').version")"
+          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match package.json version $version"
+            exit 1
+          fi
+      - name: Publish to npm
+        run: |
+          # The very first version is published by hand (npm only lets you add a
+          # trusted publisher to a package that exists), so skip what is already there.
+          name="$(node -p "require('./package.json').name")"
+          version="$(node -p "require('./package.json').version")"
+          if npm view "$name@$version" version > /dev/null 2>&1; then
+            echo "$name@$version is already on npm, skipping publish"
+          else
+            npm publish --provenance --access public
+          fi
+      - name: Create the GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Release notes are the CHANGELOG.md section for this version.
+          node -e '
+            const [, version] = process.argv.slice(1)[0].match(/^v(.*)$/);
+            const sections = require("fs").readFileSync("CHANGELOG.md", "utf8").split(/^## /m);
+            const section = sections.find((s) => s.startsWith(version + "\n") || s.startsWith(version + " "));
+            process.stdout.write(section ? section.split("\n").slice(1).join("\n").trim() + "\n" : "");
+          ' "$GITHUB_REF_NAME" > notes.md
+          if [ -s notes.md ]; then
+            gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --notes-file notes.md
+          else
+            gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --generate-notes
+          fi
+      - name: Move the major version tag
+        run: |
+          major="${GITHUB_REF_NAME%%.*}"
+          git tag -f "$major"
+          git push -f origin "refs/tags/$major"

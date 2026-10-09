@@ -56,7 +56,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: ivanko-del/firecheck@main
+      - uses: ivanko-del/firecheck@v0
         # Optional:
         # with:
         #   files: firestore.rules storage.rules   # default: read firebase.json
@@ -259,7 +259,9 @@ npm run check   # typecheck + tests + build
 
 Each rule lives in [`src/rules.ts`](src/rules.ts) and gets a test in [`test/rules.test.ts`](test/rules.test.ts), with at least one case it must flag and one it must not. The GitHub Action runs the committed `dist/`, so run `npm run build` before you commit.
 
-The demo GIF is rendered from the real output on [`docs/demo/`](docs/demo). To regenerate it, install ffmpeg and Playwright (`npm install --no-save playwright && npx playwright install chromium`), then run `node docs/demo/make-gif.mjs`.
+To release, bump the version and push the tag: `npm version patch && git push --follow-tags`. The [release workflow](.github/workflows/release.yml) checks that `dist/` is up to date, publishes to npm with provenance, creates the GitHub release from [CHANGELOG.md](CHANGELOG.md) and moves the `v0` tag that the Action is used by.
+
+The demo GIF is rendered from the real output on [`docs/demo/`](docs/demo). To regenerate it, install ffmpeg and Playwright (`npm install --no-save playwright && npx playwright install chromium`), then run `node docs/demo/make-gif.mjs`. `node docs/demo/make-social-preview.mjs` renders the repository's social preview image the same way.
 
 ## License
 
