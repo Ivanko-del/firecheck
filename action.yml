@@ -1,0 +1,41 @@
+name: 'firecheck: Firebase rules security linter'
+description: 'Find open databases, test-mode rules and ownership bugs in Firestore and Cloud Storage security rules.'
+author: 'ivanko-del'
+branding:
+  icon: shield
+  color: orange
+
+inputs:
+  files:
+    description: 'Rules files to check, separated by spaces. Default: the paths in firebase.json, or every *.rules file.'
+    required: false
+    default: ''
+  fail-on:
+    description: 'Fail the job on problems at this level or above: error, warning, info or never.'
+    required: false
+    default: 'error'
+  disable:
+    description: 'Comma-separated rule ids to skip.'
+    required: false
+    default: ''
+  working-directory:
+    description: 'Directory that contains firebase.json.'
+    required: false
+    default: '.'
+
+runs:
+  using: composite
+  steps:
+    - name: Run firecheck
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        FIRECHECK_FILES: ${{ inputs.files }}
+        FIRECHECK_FAIL_ON: ${{ inputs.fail-on }}
+        FIRECHECK_DISABLE: ${{ inputs.disable }}
+      run: |
+        args=(--format github --fail-on "$FIRECHECK_FAIL_ON")
+        if [ -n "$FIRECHECK_DISABLE" ]; then args+=(--disable "$FIRECHECK_DISABLE"); fi
+        # Files are space-separated, so word splitting is intended here.
+        # shellcheck disable=SC2086
+        node "$GITHUB_ACTION_PATH/dist/cli.js" "${args[@]}" $FIRECHECK_FILES

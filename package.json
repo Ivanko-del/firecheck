@@ -1,0 +1,52 @@
+{
+  "name": "firecheck",
+  "version": "0.1.0",
+  "description": "Security linter for Firebase rules. Catches open databases, test-mode rules and ownership bugs in Firestore and Cloud Storage rules before they ship.",
+  "keywords": [
+    "firebase",
+    "firestore",
+    "security-rules",
+    "cloud-storage",
+    "linter",
+    "security",
+    "static-analysis",
+    "cli",
+    "github-action"
+  ],
+  "license": "MIT",
+  "author": "ivanko-del",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ivanko-del/firecheck.git"
+  },
+  "type": "module",
+  "bin": {
+    "firecheck": "dist/cli.js"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "check": "npm run typecheck && npm test && npm run build",
+    "prepublishOnly": "npm run check"
+  },
+  "devDependencies": {
+    "@types/node": "22.20.5",
+    "typescript": "5.9.3",
+    "vitest": "3.2.4"
+  }
+}

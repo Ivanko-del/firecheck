@@ -1,0 +1,44 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
+    function validProfile() {
+      let data = request.resource.data;
+      return data.keys().hasOnly(['name', 'bio'])
+        && data.name is string && data.name.size() <= 100
+        && data.bio is string && data.bio.size() <= 1000;
+    }
+
+    match /users/{userId} {
+      allow read: if isOwner(userId);
+      allow create, update: if isOwner(userId) && validProfile();
+      allow delete: if isOwner(userId);
+    }
+
+    match /posts/{postId} {
+      // firecheck-disable-next-line always-true -- posts are public
+      allow read: if true;
+      allow create: if signedIn()
+        && request.resource.data.authorId == request.auth.uid
+        && request.resource.data.title is string;
+      allow update: if signedIn()
+        && resource.data.authorId == request.auth.uid
+        && request.resource.data.authorId == resource.data.authorId
+        && request.resource.data.title is string;
+      allow delete: if signedIn() && resource.data.authorId == request.auth.uid;
+    }
+
+    match /admin/{doc=**} {
+      allow read, write: if request.auth.token.admin == true;
+    }
+  }
+}
