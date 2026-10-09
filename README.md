@@ -5,35 +5,17 @@
 [![CI](https://github.com/ivanko-del/firecheck/actions/workflows/ci.yml/badge.svg)](https://github.com/ivanko-del/firecheck/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
+<p align="center">
+  <img src="docs/demo.gif" alt="Running npx firecheck in a Firebase project: it reports an orders collection any signed-in user can write, a profile update rule that trusts the client's owner field, a test-mode catch-all, and default Storage rules without upload limits." width="900">
+</p>
+
 firecheck is a security linter for **Cloud Firestore** and **Cloud Storage** rules. It reads your `firestore.rules` and `storage.rules`, understands what each condition actually checks, and tells you who can read or write your data, in plain English.
 
 ```sh
 npx firecheck
 ```
 
-No config, no Firebase login, no emulator. It reads `firebase.json` to find your rules, runs in under a second, and has zero runtime dependencies.
-
-```
-$ npx firecheck examples/insecure.rules
-
-examples/insecure.rules
-  1:1     warning Missing rules_version = '2'. Without it, version 1 is used: recursive wildcards behave differently and collection group queries don't work.  rules-version
-                  ↳ Add `rules_version = '2';` as the first line.
-  6:7     error   Test-mode rule: anyone on the internet can read and write documents at `/drafts/{draftId}` until 2027-01-01 (84 days left).  test-mode
-                  ↳ Replace it with real rules before launch. An expiry date is not access control.
-  11:7    error   Any signed-in user can read and write every document at `/orders/{orderId}`, including other users' data. Anyone can create an account in your app, so "signed in" is not access control.  auth-only
-                  ↳ Check ownership: `request.auth.uid == userId` (path variable) or `resource.data.ownerId == request.auth.uid`.
-  16:7    error   Ownership at `/profiles/{profileId}` is checked only on the incoming data. Any signed-in user can take over existing documents by sending their own uid as the owner.  owner-from-new-data
-                  ↳ Also check the stored document on update: `resource.data.ownerId == request.auth.uid`. Checking `request.resource.data` alone is only safe on create.
-  21:7    warning `resource` is null on create (nothing is stored yet), so this create rule at `/posts/{postId}` will deny requests.  resource-on-create
-                  ↳ Use `request.resource.data` for the incoming document on create.
-  21:7    info    Create at `/posts/{postId}` accepts any data: the condition never checks `request.resource.data`, so clients can write any fields of any size.  no-validation
-                  ↳ Validate the shape, e.g. `request.resource.data.keys().hasOnly(['title', 'body']) && request.resource.data.title is string && request.resource.data.title.size() <= 200`.
-  26:7    error   Catch-all rule at `/{document=**}` lets anyone on the internet read and write every document below it. Rules are OR'ed, so it overrides every more specific rule in this file.  catch-all
-                  ↳ Delete the catch-all and write explicit rules per collection. Paths without a matching rule are denied by default.
-
-✖ 7 problems (4 errors, 2 warnings, 1 info)
-```
+No config, no Firebase login, no emulator. It reads `firebase.json` to find your rules, runs in under a second, and has zero runtime dependencies. To see every rule fire, run it in a clone of this repo on the deliberately broken [`examples/insecure.rules`](examples/insecure.rules).
 
 ## Why
 
@@ -276,6 +258,8 @@ npm run check   # typecheck + tests + build
 ```
 
 Each rule lives in [`src/rules.ts`](src/rules.ts) and gets a test in [`test/rules.test.ts`](test/rules.test.ts), with at least one case it must flag and one it must not. The GitHub Action runs the committed `dist/`, so run `npm run build` before you commit.
+
+The demo GIF is rendered from the real output on [`docs/demo/`](docs/demo). To regenerate it, install ffmpeg and Playwright (`npm install --no-save playwright && npx playwright install chromium`), then run `node docs/demo/make-gif.mjs`.
 
 ## License
 
