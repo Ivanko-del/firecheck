@@ -5,6 +5,7 @@ name: Release
 #
 # One-time setup: publish the first version by hand (npm publish --access public),
 # then on npmjs.com add a trusted publisher for this repository and release.yml.
+# Alternatively, add a granular npm token as the NPM_TOKEN repository secret.
 on:
   push:
     tags: ['v*.*.*']
@@ -37,6 +38,9 @@ jobs:
             exit 1
           fi
       - name: Publish to npm
+        env:
+          # Optional. Without it, npm uses trusted publishing (OIDC).
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           # The very first version is published by hand (npm only lets you add a
           # trusted publisher to a package that exists), so skip what is already there.
@@ -58,7 +62,9 @@ jobs:
             const section = sections.find((s) => s.startsWith(version + "\n") || s.startsWith(version + " "));
             process.stdout.write(section ? section.split("\n").slice(1).join("\n").trim() + "\n" : "");
           ' "$GITHUB_REF_NAME" > notes.md
-          if [ -s notes.md ]; then
+          if gh release view "$GITHUB_REF_NAME" > /dev/null 2>&1; then
+            echo "Release $GITHUB_REF_NAME already exists, leaving it as is"
+          elif [ -s notes.md ]; then
             gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --notes-file notes.md
           else
             gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --generate-notes
